@@ -2,7 +2,7 @@ import cv2
 import argparse
 import numpy as np
 
-# filename = "/home/cttlfsh/Desktop/square_faces.jpg"
+# filename = "images/square_faces.jpg"
 
 class FaceDetection():
   '''
@@ -14,13 +14,13 @@ class FaceDetection():
   @param filename: the path of the image to load
   '''
   def __init__(self, filename):
-    self.swap_image = "/home/cttlfsh/Desktop/grrr_reaction.png"
+    self.swap_image = "images/grrr_reaction.png"
     self.methods = ['blur', 'shuffle', 'negative', 'image_swap']
     # Loading image
     self.img_raw = cv2.imread(filename)
     # Create and load the CascadeClassifier for face detection
     self.haar_cascade_face = cv2.CascadeClassifier()
-    if not self.haar_cascade_face.load('/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml'):
+    if not self.haar_cascade_face.load('resources/haarcascade_frontalface_default.xml'):
       raise FileNotFoundError
     
     [self.detected_faces, self.final_image] = self.detect_face(self.img_raw)
