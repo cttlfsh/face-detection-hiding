@@ -22,7 +22,6 @@ class FaceDetection():
     self.haar_cascade_face = cv2.CascadeClassifier()
     if not self.haar_cascade_face.load('resources/haarcascade_frontalface_default.xml'):
       raise FileNotFoundError
-    
     [self.detected_faces, self.final_image] = self.detect_face(self.img_raw)
     
     
@@ -42,10 +41,10 @@ class FaceDetection():
                          and the details of the rectangles themselves
     '''
     # Converting image to grey-scale
-    self.img_raw_grey = cv2.cvtColor(self.img_raw, cv2.COLOR_BGR2GRAY)
+    self.img_raw_grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     # Detecting faces
     self.faces_rects = self.haar_cascade_face.detectMultiScale(self.img_raw_grey, scaleFactor = 1.2, minNeighbors = 3);
-    # print('Faces found: ', len(self.faces_rects))
+    print('Faces found: ', len(self.faces_rects))
     # Drawing rectangles on the image
     for (x,y,w,h) in self.faces_rects:
       rect = {
@@ -55,9 +54,21 @@ class FaceDetection():
         'h': h
       }
       img = cv2.rectangle(self.img_raw, (x, y), (x+w, y+h), (0, 255, 0), 2)
-    return [rect, img]
-      
-      
+    return [self.faces_rects, img]
+   
+  def manual_face_selection(self, image):
+    '''
+    Handles the manual selection of faces bounding boxes in case the Viola-Jones algorithm
+    misses them. Once the user selects the rectangles, these are obscured with the same
+    policy applied fo the others.
+    '''
+    fromCenter = False
+    showCrossHair = True
+    rois = cv2.selectROIs("", image, showCrossHair, fromCenter)
+    
+    for roi in rois:
+      self.final_image = cv2.rectangle(self.final_image, (roi[0], roi[1]), (roi[0]+roi[2], roi[1]+roi[3]), (0, 255, 0), 2)
+      self.final_image[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]] = cv2.blur(self.final_image[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]], (40, 40))
   
   def hide_face(self, hide_method):
     '''
@@ -68,22 +79,21 @@ class FaceDetection():
     @param hide_method: the hiding method
     @return final_image: the image after the hiding process 
     '''
-    y = self.detected_faces['y']
-    x = self.detected_faces['x']
-    w = self.detected_faces['w']
-    h = self.detected_faces['h']
-    if not hide_method in self.methods:
-      raise KeyError
-    elif hide_method == 'blur':
-      self.final_image[y:y+h, x:x+w] = cv2.blur(self.final_image[y:y+h, x:x+w], (40, 40))
-    elif hide_method == 'shuffle':
-      np.random.shuffle(self.final_image[y:y+h, x:x+w].flat)
-    elif hide_method == 'negative':
-      self.final_image[y:y+h, x:x+w] = cv2.bitwise_not(self.final_image[y:y+h, x:x+w])
-    elif hide_method == 'image_swap':
-      self.swap_image_raw = cv2.imread(self.swap_image)    
-      self.swap_image_resize = cv2.resize(self.swap_image_raw, (w, h)) 
-      self.final_image[y:y+h, x:x+w] = self.swap_image_resize
+    for (x, y, w, h) in self.detected_faces:
+      if not hide_method in self.methods:
+        raise KeyError
+      elif hide_method == 'blur':
+        self.final_image[y:y+h, x:x+w] = cv2.blur(self.final_image[y:y+h, x:x+w], (40, 40))
+      elif hide_method == 'shuffle':
+        np.random.shuffle(self.final_image[y:y+h, x:x+w].flat)
+      elif hide_method == 'negative':
+        self.final_image[y:y+h, x:x+w] = cv2.bitwise_not(self.final_image[y:y+h, x:x+w])
+      elif hide_method == 'image_swap':
+        self.swap_image_raw = cv2.imread(self.swap_image)    
+        self.swap_image_resize = cv2.resize(self.swap_image_raw, (w, h)) 
+        self.final_image[y:y+h, x:x+w] = self.swap_image_resize
+    
+    
     return self.final_image
       
       
@@ -102,6 +112,10 @@ def main():
         img = f.hide_face(arguments.hide_method)
       except KeyError:
         print('Hide method not supported')
+    
+    f.manual_face_selection(img)
+    
+    cv2.imwrite('results/output.jpg', img)
     cv2.imshow('Processed Image', img)
     cv2.waitKey(0) 
   except FileNotFoundError:

@@ -1,8 +1,8 @@
 import numpy as np
 import cv2
 
-filename = "/home/cttlfsh/Desktop/square_faces.jpg"
-grrr = "/home/cttlfsh/Desktop/grrr_reaction.png"
+filename = "images/square_faces.jpg"
+grrr = "images/grrr_reaction.png"
 
 # Loading image
 img_raw = cv2.imread(filename)
@@ -14,7 +14,6 @@ img_raw_grey = cv2.cvtColor(img_raw, cv2.COLOR_BGR2GRAY)
 # Create and load the CascadeClassifier for face detection
 haar_cascade_face = cv2.CascadeClassifier()
 loaded = haar_cascade_face.load('/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml')
-print(loaded)
 
 '''
 Returns a rectangle around the face.
@@ -39,5 +38,10 @@ for (x,y,w,h) in faces_rects:
   # img_raw[y:y+h, x:x+w] = grrr_resize
   
 
+fromCenter = False
+roi = cv2.selectROI("", img_raw, fromCenter)
+img_raw[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]] = cv2.blur(img_raw[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]], (40, 40))
+
+cv2.imwrite('results/simple_output.png', img_raw)
 cv2.imshow('img', img_raw)
 cv2.waitKey(0) 
