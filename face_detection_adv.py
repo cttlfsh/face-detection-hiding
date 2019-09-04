@@ -115,7 +115,7 @@ def main():
     
     f.manual_face_selection(img)
     
-    cv2.imwrite('results/output.jpg', img)
+    cv2.imwrite('results/advanced_output.jpg', img)
     cv2.imshow('Processed Image', img)
     cv2.waitKey(0) 
   except FileNotFoundError:
